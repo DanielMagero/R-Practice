@@ -115,5 +115,36 @@ boxplot_gg(data, c("carat", "depth", "price", "x", "y"))
 hist_gg(data, c("carat", "depth", "price", "x", "y"))
 
 
+#removing outliers
+
+#function approach 1
+remove_outliers <- function (data, columns) {
+  for (column in columns) {
+    iqr_feature <- IQR(data[[column]])
+    
+    quantiles <- quantile(data[[column]], probs = c(0.25, 0.75), na.rm = TRUE)
+    lower_boundary <- quantiles[1] - 1.5 * iqr_feature
+    upper_boundary <- quantiles[2] + 1.5 * iqr_feature
+    
+    data <- data[which((data[[column]] >= lower_boundary) & (data[[column]] <= upper_boundary)), ]
+  }
+  return (data)
+
+}
+
+remove_outliers(data, c("carat", "depth", "price", "x", "y"))
+
+##function approach 2
+'''
+remove_outliers_two <- function(x) {
+  q1 <- quantile(x, 0.25, na.rm = TRUE)
+  q3 <- quantile(x, 0.75, na.rm = TRUE)
+  iqr <- q3 - q1
+  
+  x[ x < (q1 - 1.5*iqr) | x > (q3 + 1.5*iqr)] <- NA
+  return(x)
+}
+'''
+
 # relationships ----
 ## cat and cat ----
