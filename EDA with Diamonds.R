@@ -132,7 +132,7 @@ remove_outliers <- function (data, columns) {
 
 }
 
-remove_outliers(data, c("carat", "depth", "price", "x", "y"))
+clean_data <- remove_outliers(data, c("carat", "depth", "price", "x", "y"))
 
 ##function approach 2
 '''
@@ -145,6 +145,80 @@ remove_outliers_two <- function(x) {
   return(x)
 }
 '''
+##Visualizing the outliers
+boxplot(clean_data$price)
+numeric_data3 <- clean_data %>% select_if(is.numeric)
+par(mfrow = c(ceiling(sqrt(ncol(numeric_data3))), ceiling(sqrt(ncol(numeric_data3)))))
+for (i in 1:ncol(numeric_data3)) {
+  boxplot(numeric_data3[, i], main = colnames(numeric_data3)[i])
+}
 
+## MACHINE LEARNING ----
 # relationships ----
+#cont vs cont - corr matrix, scatter plots
+#cont vs cat - boxplots, ANOVA test
+#cat vs cat - barplot, chi square test
+
+## Target variable - price (cont variable) ----
+
+#grouping our cat data
+categorical_variables <- clean_data %>% select_if(is.character)
+head(categorical_variables)
+
+#performing anova test
+perform_anova <- function(data, cont_var, cat_vars) {
+  for (cat_var in cat_vars) {
+  anova_result <- aov(as.formula(paste(cont_var, '~', cat_var)), data = data)
+  summary_anova <- summary(anova_result)
+  p_value <- summary_anova[[1]]["Pr(>F)"][1, ]
+  
+  if (p_value <= 0.05) {
+    cat("There is a significant relationship found between ", cont_var, "and ", cat_var, "with a p-value of ", p_value, "\n")
+  }
+  else {
+    cat("No significant relationship found between ", cont_var, "and", cat_var, "with a p-value of ", p_value, "\n")
+  }
+  }
+}
+
+perform_anova(data, "price", c("cut", "colour", "clarity", "P", "PC"))
+
+## cont vs cont ----
+##approach 1
+correlation_matrix <- cor(numeric_data3)
+correlation_matrix
+
+##approach 2
+#visualization 
+pairs(clean_data[, c("price", "depth", "x", "y", "carat")])
+
+##approach 3
+corrplot(correlation_matrix, method = "circle")
+
+
 ## cat and cat ----
+
+perform_chisq <- function(data, cat_v1, cat_v2s) {
+  for (cat_v2 in cat_v2s) {
+  chisq_result <- chisq.test(table(clean_data[[cat_v1]], clean_data[[cat_v2]]))
+  p_value <- chisq_result$p.value
+  
+  if (p_value <= 0.05) {
+    cat("Significant relationship found between ", cat_v1, "and ", cat_v2, "with p-value ", p_value, "\n")
+  }
+  else {
+    cat("Significant relationship not found between ", cat_v1, "and ", cat_v2, "with p-value ", p_value, "\n")
+    
+  }
+  }
+}
+
+perform_chisq(clean_data, "colour", c("cut", "clarity", "P", "PC"))
+
+###create machine learning database ----
+ml_data <- clean_data[, !names(clean_data) %in% c("depth", "P", "PC")]
+head(ml_data)
+
+
+##model building
+
